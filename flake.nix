@@ -119,7 +119,7 @@
                   wantedBy = [ "timers.target" ];
                   after = [ "network.target" ];
                   timerConfig = {
-                    OnBootSec = "30";
+                    OnBootSec = "5";
                     OnUnitActiveSec = "6h";
                     Unit = "${name}.service";
                   };
