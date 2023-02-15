@@ -136,7 +136,7 @@
                         else
                           cfg.subDomain;
                   cmd = ''
-                    ${py}/bin/python3 ${pkg}/bin/${name} \
+                    ${pkg}/bin/${name} \
                     ${cfg.configPath} \
                     ${cfg.rootDomain} \
                     ${arg}
