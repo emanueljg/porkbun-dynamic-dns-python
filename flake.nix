@@ -147,6 +147,7 @@
                   serviceConfig = {
                     User = cfg.user;
                     Group = cfg.group;
+                    Type = "oneshot";
                     ExecStart=cmd;
                   };
                 };
