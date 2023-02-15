@@ -13,10 +13,10 @@
 
       pkg = let
         inherit (pkgs.python3Packages)
-          buildPythonPackage
+          buildPythonApplication
           requests
         ; 
-      in buildPythonPackage {
+      in buildPythonApplication {
         pname = name;
         version = "3.0";
         propagatedBuildInputs = [ requests ];
@@ -126,7 +126,6 @@
                 };
 
                 services.${name} = let
-                  py = pkgs.python3;
                   arg = if cfg.manualIPAdress != null then
                           "-i ${manualIPAdress}" 
                         else if cfg.subDomain == null then
@@ -136,7 +135,7 @@
                         else
                           cfg.subDomain;
                   cmd = ''
-                    ${py}/bin/python3 ${pkg}/bin/${name}.py \
+                    ${pkg}/bin/${name} \
                     ${cfg.configPath} \
                     ${cfg.rootDomain} \
                     ${arg}
@@ -144,7 +143,7 @@
                 in {
                   wantedBy = [ "multi-user.target" ];
                   after = [ "network.target" ];
-                  path = [ py pkg ];
+                  path = [ pkg ];
                   serviceConfig = {
                     User = cfg.user;
                     Group = cfg.group;
