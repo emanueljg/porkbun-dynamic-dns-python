@@ -13,12 +13,12 @@
 
       pkg = let
         inherit (pkgs.python3Packages)
-          buildPythonApplication
+          buildPythonPackage
           requests
         ; 
-      in buildPythonApplication {
+      in buildPythonPackage {
         pname = name;
-        version = "2.0";
+        version = "3.0";
         propagatedBuildInputs = [ requests ];
         src = ./.;
       };
