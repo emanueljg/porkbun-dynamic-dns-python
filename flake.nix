@@ -195,7 +195,9 @@
                     (mkJobServiceValue job);
 
               in builtins.listToAttrs (
-                lib.lists.forEach cfg.jobs mkJobNVPair
+                builtins.map mkJobNVPair (
+                  builtins.attrValues cfg.jobs
+                )
               );
             };
           }
