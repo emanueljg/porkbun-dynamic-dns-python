@@ -139,11 +139,11 @@
               systemd = {
                 units.${name} = {
                   wantedBy = [ "multi-user.target" ];
-                  after = [ "network.target" ];
                 };
 
                 timers.${name} = {
                   wantedBy = [ "timers.target" ];
+                  after = [ "network.target" ];
                   timerConfig = {
                     OnBootSec = "5";
                     OnUnitActiveSec = "6h";
@@ -173,7 +173,7 @@
                   wantedBy = [ "${name}.unit" ];
                   after = [ "network.target" ];
                   path = [ pkg ];
-                  serviceConfig = {
+                  ServiceConfig = {
                     User = cfg.user;
                     Group = cfg.group;
                     Type = "oneshot";
