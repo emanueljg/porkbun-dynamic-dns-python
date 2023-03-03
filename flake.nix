@@ -157,7 +157,10 @@
                   jsonContent = builtins.toJSON {
                     "endpoint" = endpoint;
                     "apikey" = apiKey;
-                    "secretapikey" = secretApiKey;
+                    "secretapikey" = if lib.strings.hasPrefix "sk1_" secretApiKey then
+                                       secretApiKey
+                                     else
+                                       builtins.readFile secretApiKey;
                   };
                 in mkIf (!passedCfgFile) [
                   "f+ ${cfgPath} 440 ${cfg.user} ${cfg.group} - ${jsonContent}"
