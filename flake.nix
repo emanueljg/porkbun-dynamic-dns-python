@@ -144,7 +144,6 @@
 
                 timers.${name} = {
                   wantedBy = [ "timers.target" ];
-                  after = [ "network.target" ];
                   timerConfig = {
                     OnBootSec = "5";
                     OnUnitActiveSec = "6h";
@@ -172,6 +171,7 @@
                   '';
                 in {
                   wantedBy = [ "${name}.unit" ];
+                  after = [ "network.target" ];
                   path = [ pkg ];
                   serviceConfig = {
                     User = cfg.user;
