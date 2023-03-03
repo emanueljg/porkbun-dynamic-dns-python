@@ -108,7 +108,7 @@
                       '';
                     };
 
-                    apiConfig = mkConfig {
+                    apiConfig = mkOption {
                       type = types.str;
                       default = cfg.defaultApiConfig;
                       description = ''
