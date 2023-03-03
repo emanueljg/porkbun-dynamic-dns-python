@@ -173,7 +173,7 @@
                 in {
                   wantedBy = [ "${name}.unit" ];
                   path = [ pkg ];
-                  ServiceConfig = {
+                  serviceConfig = {
                     User = cfg.user;
                     Group = cfg.group;
                     Type = "oneshot";
