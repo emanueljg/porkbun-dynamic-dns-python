@@ -183,9 +183,10 @@
 
                 mkJobServiceName = job:
                   if job.subDomain == null then
-                    "${name}-${job.rootDomain}"
+                    "${name}-1"
                   else
-                    "${name}-${job.subDomain}-${job.rootDomain}";
+                    "${name}-2";
+                    #"${name}-${job.subDomain}-${job.rootDomain}";
 
                 mkJobNVPair = job: 
                   lib.attrsets.nameValuePair
