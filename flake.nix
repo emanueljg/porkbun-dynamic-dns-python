@@ -56,12 +56,44 @@
                 '';
               };
 
-              configPath = mkOption {
-                type = types.str;
-                description = lib.mdDoc ''
-                  Path to the config JSON.
-                '';
+              defaultApiConfigFile = mkOption {
+                type = types.nullOr types.str;
+                default = null;
               };
+
+              defaultApiConfig = {
+
+                endpoint = mkOption {
+                  type = types.str;
+                  default = "https://api-ipv4.porkbun.com/api/json/v3";
+                  description = lib.mdDoc ''
+                    URL to the API endpoint.
+                  '';
+                };
+                
+                apiKey = mkOption {
+                  type = types.str;
+                  default = "pk1_c3d12db3f33b49c69df7d7fc67cd090dc8a1b385ae65c150376f08be194470f6";
+                  description = lib.mdDoc ''
+                    Public key of the API.
+                  '';
+                };
+
+                secretApiKey = mkOption {
+                  type = types.str;
+                  description = lib.mdDoc ''
+                    Secret key of your account. 
+
+                    - Any string beginning with `sk1_` is assumed to be a secret key 
+                    and is passed directly.
+
+                    - Any string not beginning with `sk1_` is assumed to be a path
+                    and has its content passed as the secret key.
+                  '';
+                };
+
+              };
+
 
               rootDomain = mkOption {
                 type = types.str;
@@ -113,7 +145,23 @@
                 };
               };
 
-              systemd = {
+              systemd = let
+                passedCfgFile = cfg.defaultApiConfigFile != null;
+                cfgPath = if passedCfgFile then 
+                            cfg.defaultApiConfigFile
+                          else 
+                            "/run/porkbun-ddns-config.json";
+              in {
+
+                tmpfiles.rules = with cfg.defaultApiConfig; let
+                  jsonContent = builtins.toJSON {
+                    "endpoint" = endpoint;
+                    "apikey" = apiKey;
+                    "secretapikey" = secretApiKey;
+                  };
+                in mkIf (!passedCfgFile) [
+                  "f+ ${cfgPath} 440 ${cfg.user} ${cfg.group} - ${jsonContent}"
+                ];
 
                 timers.${name} = {
                   wantedBy = [ "timers.target" ];
@@ -136,7 +184,7 @@
                           cfg.subDomain;
                   cmd = ''
                     ${pkg}/bin/${name}.py \
-                    ${cfg.configPath} \
+                    ${cfg.cfgPath} \
                     ${cfg.rootDomain} \
                     ${arg}
                   '';
