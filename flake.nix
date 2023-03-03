@@ -68,11 +68,19 @@
 
               jobs = mkOption {
                 description = lib.mdDoc ''
-                  List of jobs to carry out.
+                  Jobs to carry out.
                 '';
-                type = types.listOf (types.submodule {
+                type = types.attrsOf (types.submodule ({ name, ... }: {
                   options = {
+                    name = mkOption {
+                      type = types.str;
+                      default = name;
+                      description = lib.mdDoc ''
+                        Name of the systemd unit spawned.
 
+                        Defaults to the attribute name.
+                      '';
+                    };
                     rootDomain = mkOption {
                       type = types.str;
                       description = lib.mdDoc ''
@@ -117,7 +125,7 @@
                     };
                   
                   };
-                });
+                }));
               };
             };
 
@@ -155,7 +163,7 @@
 
               # define children
               systemd.services = let
-                mkJobServiceValue = job: let 
+                mkJobService = job: let 
                   arg = if job.manualIPAdress != null then
                           "-i ${job.manualIPAdress}" 
                         else if job.subDomain == null then
@@ -181,16 +189,9 @@
                   };
                 };
 
-                mkJobServiceName = job:
-                  if job.subDomain == null then
-                    "${name}-1"
-                  else
-                    "${name}-2";
-                    #"${name}-${job.subDomain}-${job.rootDomain}";
-
                 mkJobNVPair = job: 
                   lib.attrsets.nameValuePair
-                    (mkJobServiceName job)
+                    "${name}-${job.name}"
                     (mkJobServiceValue job);
 
               in builtins.listToAttrs (
