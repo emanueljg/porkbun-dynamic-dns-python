@@ -137,8 +137,9 @@
 
               # define parent/controller unit
               systemd = {
-                units.${name} = {
+                targets.${name} = {
                   wantedBy = [ "multi-user.target" ];
+                  after = [ "network.target" ];
                 };
 
                 timers.${name} = {
@@ -147,7 +148,7 @@
                   timerConfig = {
                     OnBootSec = "5";
                     OnUnitActiveSec = "6h";
-                    Unit = "${name}.unit";
+                    Unit = "${name}.target";
                   };
                 };
               };
@@ -171,7 +172,6 @@
                   '';
                 in {
                   wantedBy = [ "${name}.unit" ];
-                  after = [ "network.target" ];
                   path = [ pkg ];
                   serviceConfig = {
                     User = cfg.user;
