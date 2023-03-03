@@ -186,7 +186,9 @@
                     "${name}-${job.subDomain}-${job-rootDomain}"
                     (mkJobService job);
 
-              in lib.lists.forEach cfg.jobs mkJobNVPair;
+              in builtins.listToAttrs (
+                lib.lists.forEach cfg.jobs mkJobNVPair
+              );
             };
           }
         );
