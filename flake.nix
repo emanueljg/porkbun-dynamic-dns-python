@@ -171,7 +171,7 @@
                     ${arg}
                   '';
                 in {
-                  wantedBy = [ "${name}.unit" ];
+                  wantedBy = [ "${name}.target" ];
                   path = [ pkg ];
                   serviceConfig = {
                     User = cfg.user;
