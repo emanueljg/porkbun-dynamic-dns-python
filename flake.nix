@@ -56,78 +56,68 @@
                 '';
               };
 
-              defaultApiConfigFile = mkOption {
-                type = types.nullOr types.str;
-                default = null;
-              };
-
-              defaultApiConfig = {
-
-                endpoint = mkOption {
-                  type = types.str;
-                  default = "https://api-ipv4.porkbun.com/api/json/v3";
-                  description = lib.mdDoc ''
-                    URL to the API endpoint.
-                  '';
-                };
-                
-                apiKey = mkOption {
-                  type = types.str;
-                  default = "pk1_c3d12db3f33b49c69df7d7fc67cd090dc8a1b385ae65c150376f08be194470f6";
-                  description = lib.mdDoc ''
-                    Public key of the API.
-                  '';
-                };
-
-                secretApiKey = mkOption {
-                  type = types.str;
-                  description = lib.mdDoc ''
-                    Secret key of your account. 
-
-                    - Any string beginning with `sk1_` is assumed to be a secret key 
-                    and is passed directly.
-
-                    - Any string not beginning with `sk1_` is assumed to be a path
-                    and has its content passed as the secret key.
-                  '';
-                };
-
-              };
-
-
-              rootDomain = mkOption {
+              defaultApiConfig = mkOption {
                 type = types.str;
                 description = lib.mdDoc ''
-                  Which root domain to target. 
+                  Path to the API JSON configuration file. 
 
-                  Might not have its own DNS records modified
-                  if `subDomain` is set.
+                  Jobs can override this default
+                  to specify their own API configurations. 
                 '';
               };
 
-              subDomain = mkOption {
-                type = types.nullOr types.str;
-                default = "";
-                description = ''
-                  Which subdomain, if any, to target. 
-
-                  If set to null (the default), target only the root domain.
-
-                  Setting a wildcard DNS record (`*`) is supported.
+              jobs = mkOption {
+                description = lib.mdDoc ''
+                  List of jobs to carry out.
                 '';
-              };
+                type = types.listOf (types.submodule {
+                  options = {
 
-              manualIPAdress = mkOption {
-                type = types.nullOr types.str;
-                default = null;
-                description = ''
-                  Instead of detecting the external IP address, set it manually to this IP.
+                    rootDomain = mkOption {
+                      type = types.str;
+                      description = lib.mdDoc ''
+                        Which root domain to target. 
 
-                  If set to null (the default), detect the external IP address as usual.
+                        Might not have its own DNS records modified
+                        if `subDomain` is set.
+                      '';
+                    };
 
-                  If not set to null, the `subDomain` option is ignored since only
-                  wildcard DNS records (`*`) are supported with this method.
-                '';
+                    subDomain = mkOption {
+                      type = types.nullOr types.str;
+                      default = "";
+                      description = ''
+                        Which subdomain, if any, to target. 
+
+                        If set to null (the default), target only the root domain.
+
+                        Setting a wildcard DNS record (`*`) is supported.
+                      '';
+                    };
+
+                    manualIPAdress = mkOption {
+                      type = types.nullOr types.str;
+                      default = null;
+                      description = ''
+                        Instead of detecting the external IP address, set it manually to this IP.
+
+                        If set to null (the default), detect the external IP address as usual.
+
+                        If not set to null, the `subDomain` option is ignored since only
+                        wildcard DNS records (`*`) are supported with this method.
+                      '';
+                    };
+
+                    apiConfig = mkConfig {
+                      type = types.str;
+                      default = cfg.defaultApiConfig;
+                      description = ''
+                        Optional per-job path to the API JSON configuration file. 
+                      '';
+                    };
+                  
+                  };
+                });
               };
             };
 
@@ -145,26 +135,12 @@
                 };
               };
 
-              systemd = let
-                passedCfgFile = cfg.defaultApiConfigFile != null;
-                cfgPath = if passedCfgFile then 
-                            cfg.defaultApiConfigFile
-                          else 
-                            "/run/porkbun-ddns-config.json";
-              in {
-
-                tmpfiles.rules = with cfg.defaultApiConfig; let
-                  jsonContent = builtins.toJSON {
-                    "endpoint" = endpoint;
-                    "apikey" = apiKey;
-                    "secretapikey" = if lib.strings.hasPrefix "sk1_" secretApiKey then
-                                       secretApiKey
-                                     else
-                                       builtins.readFile secretApiKey;
-                  };
-                in mkIf (!passedCfgFile) [
-                  "f+ ${cfgPath} 440 ${cfg.user} ${cfg.group} - ${jsonContent}"
-                ];
+              # define parent/controller unit
+              systemd = {
+                units.${name} = {
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "network.target" ];
+                };
 
                 timers.${name} = {
                   wantedBy = [ "timers.target" ];
@@ -172,37 +148,45 @@
                   timerConfig = {
                     OnBootSec = "5";
                     OnUnitActiveSec = "6h";
-                    Unit = "${name}.service";
+                    Unit = "${name}.unit";
                   };
                 };
+              };
 
-                services.${name} = let
-                  arg = if cfg.manualIPAdress != null then
-                          "-i ${manualIPAdress}" 
-                        else if cfg.subDomain == null then
+              # define children
+              systemd.services = let
+                mkJobService = job: let 
+                  arg = if job.manualIPAdress != null then
+                          "-i ${job.manualIPAdress}" 
+                        else if job.subDomain == null then
                           ""
-                        else if cfg.subDomain == "*" then
+                        else if job.subDomain == "*" then
                           "'*'"
                         else
-                          cfg.subDomain;
+                          job.subDomain;
                   cmd = ''
                     ${pkg}/bin/${name}.py \
-                    ${cfgPath} \
+                    ${job.apiConfig} \
                     ${cfg.rootDomain} \
                     ${arg}
                   '';
                 in {
-                  wantedBy = [ "multi-user.target" ];
-                  after = [ "network.target" ];
+                  wantedBy = [ "${name}.unit" ];
                   path = [ pkg ];
-                  serviceConfig = {
+                  ServiceConfig = {
                     User = cfg.user;
                     Group = cfg.group;
                     Type = "oneshot";
                     ExecStart=cmd;
                   };
                 };
-              };  
+
+                mkJobNVPair = job: 
+                  lib.attrsets.nameValuePair
+                    "${name}-${job.subDomain}-${job-rootDomain}"
+                    (mkJobService job);
+
+              in lib.lists.forEach cfg.jobs mkJobNVPair;
             };
           }
         );
