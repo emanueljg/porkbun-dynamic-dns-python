@@ -187,7 +187,7 @@
                           cfg.subDomain;
                   cmd = ''
                     ${pkg}/bin/${name}.py \
-                    ${cfg.cfgPath} \
+                    ${cfgPath} \
                     ${cfg.rootDomain} \
                     ${arg}
                   '';
