@@ -183,7 +183,7 @@
 
                 mkJobServiceName = job:
                   if job.subDomain == null then
-                    "${name}-${job-rootDomain}"
+                    "${name}-${job.rootDomain}"
                   else
                     "${name}-${job.subDomain}-${job-rootDomain}";
 
