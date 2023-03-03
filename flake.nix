@@ -155,7 +155,7 @@
 
               # define children
               systemd.services = let
-                mkJobService = job: let 
+                mkJobServiceValue = job: let 
                   arg = if job.manualIPAdress != null then
                           "-i ${job.manualIPAdress}" 
                         else if job.subDomain == null then
@@ -181,10 +181,16 @@
                   };
                 };
 
+                mkJobServiceName = job:
+                  if job.subDomain == null then
+                    "${name}-${job-rootDomain}"
+                  else
+                    "${name}-${job.subDomain}-${job-rootDomain}";
+
                 mkJobNVPair = job: 
                   lib.attrsets.nameValuePair
-                    "${name}-${job.subDomain}-${job-rootDomain}"
-                    (mkJobService job);
+                    (mkJobServiceName job)
+                    (mkJobServiceValue job);
 
               in builtins.listToAttrs (
                 lib.lists.forEach cfg.jobs mkJobNVPair
