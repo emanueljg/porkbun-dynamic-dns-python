@@ -185,7 +185,7 @@
                   if job.subDomain == null then
                     "${name}-${job.rootDomain}"
                   else
-                    "${name}-${job.subDomain}-${job-rootDomain}";
+                    "${name}-${job.subDomain}-${job.rootDomain}";
 
                 mkJobNVPair = job: 
                   lib.attrsets.nameValuePair
