@@ -192,7 +192,7 @@
                 mkJobNVPair = job: 
                   lib.attrsets.nameValuePair
                     "${name}-${job.name}"
-                    (mkJobServiceValue job);
+                    (mkJobService job);
 
               in builtins.listToAttrs (
                 builtins.map mkJobNVPair (
