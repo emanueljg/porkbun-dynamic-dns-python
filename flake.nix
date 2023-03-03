@@ -167,7 +167,7 @@
                   cmd = ''
                     ${pkg}/bin/${name}.py \
                     ${job.apiConfig} \
-                    ${cfg.rootDomain} \
+                    ${job.rootDomain} \
                     ${arg}
                   '';
                 in {
